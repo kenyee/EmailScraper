@@ -33,7 +33,7 @@ public class EmailScraper {
 			logger.warn("Unable to trust all SSL connections");
 		}
 
-		Scraper scraper = new JsoupScraper(false);
+		Scraper scraper = new JsoupScraper(true);
 		Set<String> emails = null;
 		try {
 			emails = scraper.getEmails(args[0]);

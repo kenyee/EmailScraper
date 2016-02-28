@@ -4,7 +4,7 @@ various web sites.
 
 The current version supports using:
     - [jsoup](http://jsoup.org)
-    - [htmlunit](http://htmlunit.sourceforge.net) with jsoup.
+    - [jBrowserDriver](https://github.com/MachinePublishers/jBrowserDriver/) with jsoup.
 
 ### Building
 This project can be built as a single fatJar using this command:
@@ -21,6 +21,7 @@ Once you build it, you can run it by typing in
     java -jar build/libs/emailscraper-1.0.jar <domain-name>
 `````
 
-### Limitations
-It currently does not support scraping sites that use AJAX (aka Single Page Apps like
-those built with Angular or React).
+### Notes
+Tried using HtmlUnit for AJAX sites and it was terrible and threw a lot of
+weird errors.  Selenium worked a lot better though much slower than using
+jsoup for non-AJAX sites.

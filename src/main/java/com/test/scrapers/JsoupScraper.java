@@ -6,15 +6,17 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.gargoylesoftware.htmlunit.BrowserVersion;
-import com.gargoylesoftware.htmlunit.BrowserVersionFeatures;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.WebClient;
+
+import org.openqa.selenium.WebDriver;
+import com.machinepublishers.jbrowserdriver.Timezone;
+import com.machinepublishers.jbrowserdriver.JBrowserDriver;
+import com.machinepublishers.jbrowserdriver.Settings;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,28 +32,9 @@ public class JsoupScraper implements Scraper {
     private final Set<String> emails = new HashSet<>();
     private final Pattern emailRegEx = Pattern.compile("[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+");
     private final boolean useWebClient;
-    private WebClient webClient;
-    private final BrowserVersion browserVersion = BrowserVersion.CHROME;
 
     public JsoupScraper(boolean useWebClient) {
         this.useWebClient = useWebClient;
-
-        if (useWebClient){
-            String applicationName = browserVersion.getApplicationName();
-            String applicationVersion = browserVersion.getApplicationVersion();
-            String userAgent = browserVersion.getUserAgent();
-            float browserVersionNumeric = browserVersion.getBrowserVersionNumeric();
-
-            BrowserVersion browser = new BrowserVersion(applicationName, applicationVersion, userAgent, browserVersionNumeric) {
-                public boolean hasFeature(BrowserVersionFeatures property) {
-
-                    // change features here
-                    return browserVersion.hasFeature(property);
-                }
-            };
-
-            webClient = new WebClient(browser);
-        }
     }
 
     public Set<String> getEmails(String url) throws Exception {
@@ -119,7 +102,7 @@ public class JsoupScraper implements Scraper {
         System.out.print(".");  // progress indicator
 
         Document doc = useWebClient ?
-                Jsoup.parse(loadPage(url))
+                Jsoup.parse(loadPageSelenium(url))
                 : Jsoup.connect(url).get();
 
         logger.debug("Document is " + doc.outerHtml());
@@ -149,10 +132,32 @@ public class JsoupScraper implements Scraper {
         }
     }
 
-    private String loadPage(String url) throws Exception {
-        // the WebClient throws a lot of different exceptions
-        HtmlPage page = webClient.getPage(url);
-        logger.debug("***** XML is : " + page.asXml());
-        return page.asXml();
+    private String loadPageSelenium(String url) {
+        // this can throw a lot of different exceptions
+
+        // disable SSL checking (set to "compatible" for Firefox SSL certs)
+        Properties props = System.getProperties();
+        props.setProperty("jbd.pemfile", "trustanything");
+
+        JBrowserDriver driver = new JBrowserDriver(Settings.builder().
+                timezone(Timezone.AMERICA_NEWYORK).build());
+
+        // This will block for the page load and any
+        // associated AJAX requests
+        driver.get(url);
+
+        // ignore pages w/ errors
+        if (driver.getStatusCode() != 200) {
+            return "";
+        }
+
+        // Returns the page source in its current state, including
+        // any DOM updates that occurred after page load
+        String result = driver.getPageSource();
+
+        // Close the browser. Allows the Selenium thread to terminate.
+        driver.quit();
+
+        return result;
     }
 }
