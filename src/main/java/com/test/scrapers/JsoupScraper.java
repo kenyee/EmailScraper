@@ -12,6 +12,7 @@ import com.machinepublishers.jbrowserdriver.JBrowserDriver;
 import com.machinepublishers.jbrowserdriver.Settings;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashSet;
@@ -201,8 +202,14 @@ public class JsoupScraper implements Scraper {
 
         // Returns the page source in its current state, including
         // any DOM updates that occurred after page load
-        String result = browserDriver.getPageSource();
+        try {
+            String result = browserDriver.getPageSource();
 
-        return result;
+            return result;
+        } catch (Exception e) {
+            // we can get a java.net.SocketException if the URL cannot be connected to
+            logger.info("Error getting page source: ", e);
+            return "";
+        }
     }
 }
