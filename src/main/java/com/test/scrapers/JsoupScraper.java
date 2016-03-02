@@ -95,7 +95,6 @@ public class JsoupScraper implements Scraper {
 
         System.out.println("Scraping " + url);
         logger.debug("Scraping " + url);
-        System.out.print(".");  // progress indicator
 
         Document doc = useWebClient ?
                 Jsoup.parse(loadPageSelenium(url))
