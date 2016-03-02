@@ -62,6 +62,10 @@ public class JsoupScraper implements Scraper {
 
         try {
             if (useWebClient) {
+                // disable SSL checking (set to "compatible" for Firefox SSL certs)
+                Properties props = System.getProperties();
+                props.setProperty("jbd.pemfile", "trustanything");
+
                 browserDriver = new JBrowserDriver(Settings.builder().
                         timezone(Timezone.AMERICA_NEWYORK).build());
             }
@@ -186,10 +190,6 @@ public class JsoupScraper implements Scraper {
 
     private String loadPageSelenium(String url) {
         // this can throw a lot of different exceptions
-
-        // disable SSL checking (set to "compatible" for Firefox SSL certs)
-        Properties props = System.getProperties();
-        props.setProperty("jbd.pemfile", "trustanything");
 
         // This will block for the page load and any
         // associated AJAX requests
