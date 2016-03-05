@@ -13,5 +13,7 @@ public interface Scraper {
 
     void cleanup();
 
+    void waitDone() throws InterruptedException;
+
     void scrapeEmailsFromPage(URI rootUri, String path) throws Exception;
 }
