@@ -1,5 +1,8 @@
 package com.test;
 
+import com.test.pageloaders.PageLoader;
+import com.test.pageloaders.SeleniumPageLoader;
+import com.test.pageloaders.SimplePageLoader;
 import com.test.scrapers.JsoupScraper;
 import com.test.scrapers.Scraper;
 import com.test.utils.SslUtils;
@@ -38,34 +41,56 @@ public class EmailScraper {
 	}
 
 	private void runMain(String[] args) {
-		CmdLineParser parser = new CmdLineParser(this);
-		try {
-			parser.parseArgument(args);
-			if( arguments.isEmpty() )
-				throw new CmdLineException("Must specify site");
-		} catch( CmdLineException e ) {
-			System.err.println("  Example: java -jar EmailParser-1.0.jar <website>"+parser.printExample(ALL));
-			System.exit(0);
-		}
+        parseArguments(args);
+        disableJavaSslCheck();
 
-		// Java doesn't have a web browser's SSL cert keystore so just disable SSL validation
-		try {
-			SslUtils.disableSSLCertCheck();
-		} catch (NoSuchAlgorithmException e) {
-			logger.warn("Unable to find SSL algorithms");
-		} catch (KeyManagementException e) {
-			logger.warn("Unable to trust all SSL connections");
-		}
+        PageLoader pageLoader = noAjax ? new SimplePageLoader() : new SeleniumPageLoader();
+		Scraper scraper = new JsoupScraper(pageLoader);
+        Set<String> emails = doScraping(pageLoader, scraper);
+		showEmails(emails);
+	}
 
-		Scraper scraper = new JsoupScraper(!noAjax);
-		Set<String> emails = null;
-		try {
-			emails = scraper.getEmails(arguments.get(0));
-		} catch (Exception e) {
-			logger.error("Error scraping pages: ", e);
-			System.exit(-2);
-		}
+    private Set<String> doScraping(PageLoader pageLoader, Scraper scraper) {
+        Set<String> emails = null;
+        try {
+            String url = arguments.get(0);
+            emails = scraper.getEmails(url);
+        } catch (Exception e) {
+            logger.error("Error scraping pages: ", e);
+            System.exit(-2);
+        } finally {
+            pageLoader.cleanup();
+            scraper.cleanup();
+        }
+        return emails;
+    }
 
+    private void disableJavaSslCheck() {
+        // Java doesn't have a web browser's SSL cert keystore so just disable SSL validation
+        try {
+            SslUtils.disableSSLCertCheck();
+        } catch (NoSuchAlgorithmException e) {
+            logger.warn("Unable to find SSL algorithms");
+        } catch (KeyManagementException e) {
+            logger.warn("Unable to trust all SSL connections");
+        }
+    }
+
+    private void parseArguments(String[] args) {
+        CmdLineParser parser = new CmdLineParser(this);
+        try {
+            parser.parseArgument(args);
+            if( arguments.isEmpty() )
+                throw new CmdLineException("Must specify site");
+        } catch( CmdLineException e ) {
+            System.err.println("  Example: java -jar EmailParser-1.0.jar <website>"+parser.printExample(ALL));
+            System.exit(0);
+        }
+
+        System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE");
+    }
+
+    private void showEmails(Set<String> emails) {
 		if (emails.size() == 0) {
 			System.out.println("\nNo emails found");
 		} else {
@@ -75,5 +100,4 @@ public class EmailScraper {
 			}
 		}
 	}
-
 }
