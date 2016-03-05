@@ -44,6 +44,9 @@ public class EmailScraper {
     @Option(name="-loglevel",usage="Default is INFO; can set to TRACE, DEBUG, or NONE")
     private String logLevel = "WARN";
 
+    @Option(name="-maxthreads",usage="1 to 16")
+    private int maxThreads = 1;
+
 	public static void main(String[] args) {
 		new EmailScraper().runMain(args);
 	}
@@ -61,7 +64,7 @@ public class EmailScraper {
             pageLoader = new SeleniumPageLoader();
         }
 
-		Scraper scraper = new JsoupScraper(pageLoader, new StdoutStatusDumper());
+		Scraper scraper = new JsoupScraper(pageLoader, new StdoutStatusDumper(), maxThreads);
         Set<String> emails = doScraping(pageLoader, scraper);
 		showEmails(emails);
 	}
@@ -71,6 +74,7 @@ public class EmailScraper {
         try {
             String url = arguments.get(0);
             emails = scraper.getEmails(url);
+            scraper.waitDone();
         } catch (Exception e) {
             logger.error("Error scraping pages: ", e);
             System.exit(-2);

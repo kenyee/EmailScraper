@@ -22,8 +22,8 @@ public class JsoupScraper extends BaseScraper implements Scraper {
 
     private PageLoader pageLoader;
 
-    public JsoupScraper(PageLoader pageLoader, StatusListener statusListener) {
-        super(statusListener);
+    public JsoupScraper(PageLoader pageLoader, StatusListener statusListener, int maxThreads) {
+        super(statusListener, maxThreads);
 
         this.pageLoader = pageLoader;
     }
@@ -54,9 +54,8 @@ public class JsoupScraper extends BaseScraper implements Scraper {
             String childUrl = e.attr("href");
             if (childUrl != null) {
                 try {
-                    scrapeEmailsFromPage(rootUri, childUrl);
+                    addScrapeJob(rootUri, childUrl);
                 } catch (IOException | URISyntaxException ex) {
-                    // just log exceptions
                     logger.warn("Error scraping '" + childUrl + "': " + ex);
                 }
             }
