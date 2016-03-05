@@ -3,6 +3,7 @@ package com.test;
 import com.test.pageloaders.PageLoader;
 import com.test.pageloaders.SeleniumPageLoader;
 import com.test.pageloaders.SimplePageLoader;
+import com.test.pageloaders.Ui4JPageLoader;
 import com.test.scrapers.JsoupScraper;
 import com.test.scrapers.Scraper;
 import com.test.utils.SslUtils;
@@ -34,7 +35,13 @@ public class EmailScraper {
 	private List<String> arguments = new ArrayList<String>();
 
 	@Option(name="-noajax",usage="Disables support for AJAX web sites")
-	private boolean noAjax;
+	private boolean noAjax = false;
+
+    @Option(name="-ui4j",usage="Use Ui4j to download AJAX web sites instead of jBrowserDriver (must build with Monocle)")
+    private boolean useUi4j = false;
+
+    @Option(name="-loglevel",usage="Default is INFO; can set to TRACE, DEBUG, or NONE")
+    private String logLevel = "INFO";
 
 	public static void main(String[] args) {
 		new EmailScraper().runMain(args);
@@ -44,7 +51,15 @@ public class EmailScraper {
         parseArguments(args);
         disableJavaSslCheck();
 
-        PageLoader pageLoader = noAjax ? new SimplePageLoader() : new SeleniumPageLoader();
+        PageLoader pageLoader;
+        if (noAjax) {
+            pageLoader = new SimplePageLoader();
+        } else if (useUi4j) {
+            pageLoader = new Ui4JPageLoader();
+        } else {
+            pageLoader = new SeleniumPageLoader();
+        }
+
 		Scraper scraper = new JsoupScraper(pageLoader);
         Set<String> emails = doScraping(pageLoader, scraper);
 		showEmails(emails);
@@ -87,7 +102,7 @@ public class EmailScraper {
             System.exit(0);
         }
 
-        System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE");
+        System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, logLevel);
     }
 
     private void showEmails(Set<String> emails) {

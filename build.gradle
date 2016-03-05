@@ -32,6 +32,10 @@ dependencies {
     compile 'junit:junit:4.+'
     compile 'args4j:args4j:2.33'
     compile 'org.slf4j:slf4j-api:1.7.+'
+
     compile 'org.jsoup:jsoup:1.8.3'
     compile 'com.machinepublishers:jbrowserdriver:0.10.1'
+
+    compile 'com.ui4j:ui4j-all:2.1.0'
+    //compile 'org.jfxtras:openjfx-monocle:1.8.0_20'
 }

@@ -13,7 +13,7 @@ import java.util.Properties;
 /**
  * Uses Selenium to download an AJAX/SPA web page
  */
-public class SeleniumPageLoader implements PageLoader{
+public class SeleniumPageLoader implements PageLoader {
 
     private static final Logger logger = LoggerFactory.getLogger(SeleniumPageLoader.class);
 
