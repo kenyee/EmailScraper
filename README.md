@@ -31,7 +31,6 @@ gets parsed with using Selenium; if the site doesn't use AJAX, this will be a *l
 * -maxthreads: For extra speed if you have the bandwidth, you can use the
 "-maxthreads" parameter followed by the number of threads.  If you use too many
 threads, you'll overload your bandwidth or heap; I'd recommend no more than 10.
-NOTE: this only works if you have -noajax set.
 
 * -ui4j: You can alternatively use Ui4j as the AJAX page downloader via the "-ui4j" parameter, 
 but you have to uncomment the compile Monocle statement in the build.gradle; 
