@@ -6,6 +6,7 @@ import com.test.pageloaders.SimplePageLoader;
 import com.test.pageloaders.Ui4JPageLoader;
 import com.test.scrapers.JsoupScraper;
 import com.test.scrapers.Scraper;
+import com.test.scrapers.StdoutStatusDumper;
 import com.test.utils.SslUtils;
 
 import org.slf4j.Logger;
@@ -41,7 +42,7 @@ public class EmailScraper {
     private boolean useUi4j = false;
 
     @Option(name="-loglevel",usage="Default is INFO; can set to TRACE, DEBUG, or NONE")
-    private String logLevel = "INFO";
+    private String logLevel = "WARN";
 
 	public static void main(String[] args) {
 		new EmailScraper().runMain(args);
@@ -60,7 +61,7 @@ public class EmailScraper {
             pageLoader = new SeleniumPageLoader();
         }
 
-		Scraper scraper = new JsoupScraper(pageLoader);
+		Scraper scraper = new JsoupScraper(pageLoader, new StdoutStatusDumper());
         Set<String> emails = doScraping(pageLoader, scraper);
 		showEmails(emails);
 	}

@@ -3,9 +3,9 @@ This project is for experimenting with web scraping tools to scrape emails off
 various web sites.
 
 The current version supports using:
-    - [jsoup](http://jsoup.org)
-    - [jBrowserDriver](https://github.com/MachinePublishers/jBrowserDriver/)
-    - [Ui4j](https://github.com/ui4j/ui4j)
+* [jsoup](http://jsoup.org)
+* [jBrowserDriver](https://github.com/MachinePublishers/jBrowserDriver/)
+* [Ui4j](https://github.com/ui4j/ui4j)
 
 ### Building
 This project can be built as a single fatJar using this command:

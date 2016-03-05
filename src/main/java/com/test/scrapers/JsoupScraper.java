@@ -22,8 +22,8 @@ public class JsoupScraper extends BaseScraper implements Scraper {
 
     private PageLoader pageLoader;
 
-    public JsoupScraper(PageLoader pageLoader) {
-        super();
+    public JsoupScraper(PageLoader pageLoader, StatusListener statusListener) {
+        super(statusListener);
 
         this.pageLoader = pageLoader;
     }
@@ -45,6 +45,8 @@ public class JsoupScraper extends BaseScraper implements Scraper {
         Document doc = Jsoup.parse(pageLoader.loadPage(url));
 
         extractEmailsFromText(doc.text());
+
+        statusListener.loadedUrl(url);
 
         // now walk all the links on the page recursively
         Elements elements = doc.select("a[href]");

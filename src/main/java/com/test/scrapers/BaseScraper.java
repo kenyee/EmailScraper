@@ -31,6 +31,12 @@ public abstract class BaseScraper {
 
     protected abstract void cleanup();
 
+    protected StatusListener statusListener;
+
+    public BaseScraper(StatusListener statusListener) {
+        this.statusListener = statusListener;
+    }
+
     protected void init(String url) {
         if (!url.contains("://")) {
             url = "http://" + url;
@@ -39,7 +45,7 @@ public abstract class BaseScraper {
         try {
             rootUri = new URI(url);
         } catch (URISyntaxException e) {
-            System.err.println("Invalid URL: " + url);
+            statusListener.invalidUrl(url);
             System.exit(-1);
         }
 
@@ -65,7 +71,8 @@ public abstract class BaseScraper {
 
             scrapeEmailsFromPage(rootUri, url);
         } catch (URISyntaxException e) {
-            logger.warn("Invalid URL " + url, e);
+            logger.info("Invalid URL " + url, e);
+            statusListener.invalidUrl(url);
         } catch (Exception ex) {
             if (emails.size() == 0) {
                 throw ex;
@@ -82,6 +89,7 @@ public abstract class BaseScraper {
 
     protected String getUrlToFollow(URI rootUri, String path) throws URISyntaxException {
         if (!shouldFollowPath(rootUri, path)) {
+            statusListener.skippedUrl(path);
             return null;
         }
 
@@ -99,19 +107,18 @@ public abstract class BaseScraper {
         // strips off protocol header
         try {
             URI uri = new URI(url.trim());
-            String localPath = uri.getSchemeSpecificPart() + uri.getRawPath();
+            String localPath = uri.getSchemeSpecificPart();
             if ((localPath.length() > 0) && visitedUrls.contains(localPath)) {
                 // prevent circular loops
+                statusListener.skippedUrl(url);
                 return null;
             } else {
                 visitedUrls.add(localPath);
             }
         } catch (URISyntaxException e) {
-            System.err.println("Ignoring bad URL: " + path);
+            statusListener.invalidUrl(path);
             return null;
         }
-
-        logger.info("Scraping " + url);
 
         return url;
     }
@@ -146,7 +153,7 @@ public abstract class BaseScraper {
                 return false;
             }
         } catch (URISyntaxException e) {
-            System.err.println("Ignoring bad URL: " + path);
+            statusListener.invalidUrl(path);
             return false;
         }
         return true;
@@ -159,8 +166,7 @@ public abstract class BaseScraper {
             String email = matcher.group();
             emails.add(email);
 
-            logger.info("Found email: " + email);
-            System.out.print("+");  // progress indicator
+            statusListener.foundEmail(email);
         }
     }
 }
