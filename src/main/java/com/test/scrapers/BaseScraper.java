@@ -1,0 +1,166 @@
+package com.test.scrapers;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * Shared scraping code
+ */
+public abstract class BaseScraper {
+
+    private static final Logger logger = LoggerFactory.getLogger(BaseScraper.class);
+
+    private static String excludeExtensions[] = {
+        ".mpg", ".mp4", ".avi", ".pdf", ".gif", ".png", ".jpg", ".css", ".js"
+    };
+
+    protected final Set<String> visitedUrls = new HashSet<>();
+    protected final Set<String> emails = new HashSet<>();
+    protected final Pattern emailRegEx = Pattern.compile("[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+");
+
+    protected String baseDomain;
+
+    protected abstract void scrapeEmailsFromPage(URI rootUri, String path) throws Exception;
+
+    protected abstract void cleanup();
+
+    protected void init(String url) {
+        if (!url.contains("://")) {
+            url = "http://" + url;
+        }
+        URI rootUri = null;
+        try {
+            rootUri = new URI(url);
+        } catch (URISyntaxException e) {
+            System.err.println("Invalid URL: " + url);
+            System.exit(-1);
+        }
+
+        // calculate root domain...we only want the last two sections of the hostname
+        String[] levels = rootUri.getHost().split("\\.");
+        if (levels.length > 1)
+        {
+            baseDomain = levels[levels.length - 2] + "." + levels[levels.length - 1];
+        } else {
+            baseDomain = rootUri.toString();
+        }
+    }
+
+    public Set<String> getEmails(String url) throws Exception {
+        init(url);
+
+        if (!url.contains("://")) {
+            url = "http://" + url;
+        }
+        URI rootUri = null;
+        try {
+            rootUri = new URI(url);
+
+            scrapeEmailsFromPage(rootUri, url);
+        } catch (URISyntaxException e) {
+            logger.warn("Invalid URL " + url, e);
+        } catch (Exception ex) {
+            if (emails.size() == 0) {
+                throw ex;
+            } else {
+                // just log a debug warning because we got some useful results back
+                logger.warn("Could not finish scraping site: " + ex);
+            }
+        } finally {
+            cleanup();
+        }
+
+        return emails;
+    }
+
+    protected String getUrlToFollow(URI rootUri, String path) throws URISyntaxException {
+        if (!shouldFollowPath(rootUri, path)) {
+            return null;
+        }
+
+        String url;
+        if (path.contains("://")) {
+            url = path;
+        } else {
+            url = rootUri.toString();
+            if (!path.startsWith("/")) {
+                url += "/";
+            }
+            url += path;
+        }
+
+        // strips off protocol header
+        try {
+            URI uri = new URI(url.trim());
+            String localPath = uri.getSchemeSpecificPart() + uri.getRawPath();
+            if ((localPath.length() > 0) && visitedUrls.contains(localPath)) {
+                // prevent circular loops
+                return null;
+            } else {
+                visitedUrls.add(localPath);
+            }
+        } catch (URISyntaxException e) {
+            System.err.println("Ignoring bad URL: " + path);
+            return null;
+        }
+
+        logger.info("Scraping " + url);
+
+        return url;
+    }
+
+    protected boolean shouldFollowPath(URI rootUri, String path) throws URISyntaxException {
+        if (path.startsWith("javascript:") || path.startsWith("#")) {
+            return false;
+        }
+
+        // exclude multimedia files from being parsed
+        for (String ext : excludeExtensions) {
+            if (path.toLowerCase().endsWith(ext)) {
+                return false;
+            }
+        }
+
+        if (path.startsWith("mailto:")) {
+            String email = path.substring("mailto".length()+1);
+            emails.add(email);
+            return false;
+        }
+
+        // don't follow links off site
+        try {
+            // get base domain of root URI
+            // NOTE: this only works w/ real root domains.  If you have a site on a shared
+            // hosting service like mysite.squarespace.com, this check will let us walk any
+            // domains on the site :-(
+            URI pathUri = new URI(path.trim());
+            if ((pathUri.getHost() != null)
+                    && !pathUri.getHost().endsWith(baseDomain)) {
+                return false;
+            }
+        } catch (URISyntaxException e) {
+            System.err.println("Ignoring bad URL: " + path);
+            return false;
+        }
+        return true;
+    }
+
+    protected void extractEmailsFromText(String text) {
+        // extract emails
+        Matcher matcher = emailRegEx.matcher(text);
+        while (matcher.find()) {
+            String email = matcher.group();
+            emails.add(email);
+
+            logger.info("Found email: " + email);
+            System.out.print("+");  // progress indicator
+        }
+    }
+}
